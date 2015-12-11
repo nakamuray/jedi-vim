@@ -62,7 +62,7 @@ class JediRemote(object):
 
         elif input.get('code') == 'ng':
             exception_name = input['exception']
-            message = input['message']
+            e_args = input['args']
 
             # try to find from jedi first
             exception_class = getattr(jedi.api, exception_name, None)
@@ -73,9 +73,9 @@ class JediRemote(object):
 
             if exception_class is None:
                 exception_class = Exception
-                message = '{}: {}'.format(exception_name, message)
+                e_args = ('{}: {}'.format(exception_name, e_args), )
 
-            raise exception_class(message)
+            raise exception_class(*e_args)
 
         else:
             raise NotImplementedError(repr(input))

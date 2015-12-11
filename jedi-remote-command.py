@@ -33,8 +33,8 @@ class JSONRPC(object):
             except Exception as e:
                 result = {
                     'code': 'ng',
-                    'exception': repr(type(e)),
-                    'message': str(e),
+                    'exception': type(e).__name__,
+                    'args': e.args,
                 }
             else:
                 result = {'code': 'ok', 'return': ret}
