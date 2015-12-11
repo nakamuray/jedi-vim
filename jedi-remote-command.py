@@ -42,14 +42,20 @@ class JSONRPC(object):
             self._write_output(result)
 
     def _write_output(self, data):
-        self.output.write(json.dumps(data, cls=self._json_encoder_factory))
+        self.output.write(json.dumps(
+            data, default=self._remote_object_serializor))
         self.output.write('\n')
         self.output.flush()
 
-    def _json_encoder_factory(self, *args, **kwargs):
-        json_encoder = RemoteJSONEncoder(self._objects, *args, **kwargs)
-
-        return json_encoder
+    def _remote_object_serializor(self, o):
+        # non JSON encode-able objects are managed on this process.
+        # it stored with unique ID and send this ID to client.
+        # client could access object's attributes through this ID.
+        ref = Ref(o)
+        self._objects[ref.id] = ref
+        # XXX: including builtin-typed attribute may improve
+        #      overall performance, or may not.
+        return {'__type': 'RemoteObject', '__id': ref.id}
 
     def func_get_from_jedi(self, name):
         return getattr(jedi, name)
@@ -71,22 +77,6 @@ class JSONRPC(object):
 
         else:
             raise NotImplementedError
-
-
-class RemoteJSONEncoder(json.JSONEncoder):
-    def __init__(self, objects, *args, **kwargs):
-        super(RemoteJSONEncoder, self).__init__(*args, **kwargs)
-        self._objects = objects
-
-    def default(self, o):
-        # non JSON encode-able objects are managed on this process.
-        # it stored with unique ID and send this ID to client.
-        # client could access object's attributes through this ID.
-        ref = Ref(o)
-        self._objects[ref.id] = ref
-        # XXX: including builtin-typed attribute may improve
-        #      overall performance, or may not.
-        return {'__type': 'RemoteObject', '__id': ref.id}
 
 
 class Ref(object):
