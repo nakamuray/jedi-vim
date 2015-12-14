@@ -8,6 +8,7 @@ import json
 import traceback  # for exception output
 import re
 import os
+import platform
 import subprocess
 import sys
 from shlex import split as shsplit
@@ -157,10 +158,21 @@ class JediRemote(object):
         if not (self._process and self._process.poll() is None):
             cmd = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), self.remote_cmd)
+            # On Windows platform, need STARTUPINFO
+            if platform.system() == 'Windows':
+                si = subprocess.STARTUPINFO()
+                si.dwFlags = subprocess.STARTF_USESHOWWINDOW;
+                si.wShowWindow = subprocess.SW_HIDE;
+                stderr = subprocess.STDOUT
+            else:
+                si = None
+                stderr = subprocess.PIPE
             self._process = subprocess.Popen(
                 [self.python, cmd],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
+                stderr=stderr,
+                startupinfo=si,
             )
 
         return self._process
