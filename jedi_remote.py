@@ -1,9 +1,9 @@
 import json
 import os
+import platform
+import subprocess
 
 import jedi.api
-
-from subprocess import Popen, PIPE
 
 
 class JediRemote(object):
@@ -32,7 +32,21 @@ class JediRemote(object):
             cmd = os.path.join(
                 os.path.dirname(
                     os.path.abspath(__file__)), self.remote_command)
-            self._process = Popen([self.python, cmd], stdin=PIPE, stdout=PIPE)
+            # On Windows platform, need STARTUPINFO
+            if platform.system() == 'Windows':
+                si = subprocess.STARTUPINFO()
+                si.dwFlags = subprocess.STARTF_USESHOWWINDOW
+                si.wShowWindow = subprocess.SW_HIDE
+                stderr = open(os.devnull, 'w')
+            else:
+                si = None
+                stderr = None
+            self._process = subprocess.Popen(
+                [self.python, cmd],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=stderr,
+                startupinfo=si)
 
         return self._process
 
